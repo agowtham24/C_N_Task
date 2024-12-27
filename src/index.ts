@@ -9,11 +9,17 @@ import { MongoDB } from "./mongoDB-setup";
 import { requestLogger } from "./Middlewares/logger";
 import userRouter from "./Routers/Users";
 import roleRouter from "./Routers/Roles";
+import fs from "fs";
+import path from "path";
+
+const publicFolder = path.join(process.cwd(), "public");
+const foldersToCreate = ["products"];
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(express.static(publicFolder));
 app.use(
   compression({
     level: 6,
@@ -26,6 +32,16 @@ app.use(requestLogger);
 async function startServer() {
   try {
     await MongoDB.connectDB();
+
+    if (!fs.existsSync(publicFolder)) {
+      fs.mkdirSync(publicFolder);
+    }
+    // create folders
+    foldersToCreate.forEach((folder) => {
+      if (!fs.existsSync(path.join(publicFolder, folder))) {
+        fs.mkdirSync(path.join(publicFolder, folder));
+      }
+    });
     app.listen(Config.PORT, () => {
       console.log("..................................................");
       console.log(

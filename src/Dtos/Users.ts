@@ -4,6 +4,7 @@ export interface AddUser {
   password: string;
   loginCount?: number;
   role: string;
+  ownerId:string
 }
 export interface UpdateUser {
   name?: string;

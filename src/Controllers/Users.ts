@@ -8,6 +8,7 @@ import { Jwt } from "../Utils/Jwt";
 export class UserController {
   static async createUser(req: Request, res: Response) {
     try {
+      const { uoid } = req.user as any;
       const isExistingRole = await RoleRepository.getRole([
         {
           $match: { _id: await MongoDB.convertToObjectId(req.body.role) },
@@ -21,7 +22,7 @@ export class UserController {
       if (isExistingRole.length === 0)
         return res.status(404).json({ message: "Role not found" });
       req.body.password = await Bcrypt.hashPassword(req.body.password);
-      await UserRepository.addUser(req.body);
+      await UserRepository.addUser({ ...req.body, ownerId: uoid });
       return res.status(200).json({ message: "User added successfully" });
     } catch (error) {
       return res.status(500).json(error);
@@ -29,26 +30,63 @@ export class UserController {
   }
   static async getAllUsers(req: Request, res: Response) {
     try {
-      const data = await UserRepository.getUser([
+      const { role, uoid } = req.user as any;
+      let data;
+      const roleData = await RoleRepository.getRole([
         {
-          $lookup: {
-            from: "roles",
-            localField: "role",
-            foreignField: "_id",
-            as: "userRole",
-          },
+          $match: { _id: await MongoDB.convertToObjectId(role) },
         },
-        { $unwind: "$userRole" },
         {
           $project: {
-            name: 1,
-            email: 1,
-            roleName: "$userRole.role",
             role: 1,
-            pagePermissions: "$userRole.pagePermissions",
           },
         },
       ]);
+      if (roleData[0].role === "Admin") {
+        data = await UserRepository.getUser([
+          {
+            $lookup: {
+              from: "roles",
+              localField: "role",
+              foreignField: "_id",
+              as: "userRole",
+            },
+          },
+          { $unwind: "$userRole" },
+          {
+            $project: {
+              name: 1,
+              email: 1,
+              role: 1,
+              roleName: "$userRole.role",
+              pagePermissions: "$userRole.pagePermissions",
+            },
+          },
+        ]);
+      } else if (roleData[0].role === "Manager") {
+        data = await UserRepository.getUser([
+          {
+            $match: { ownerId: await MongoDB.convertToObjectId(uoid) },
+          },
+          {
+            $lookup: {
+              from: "roles",
+              localField: "role",
+              foreignField: "_id",
+              as: "userRole",
+            },
+          },
+          { $unwind: "$userRole" },
+          {
+            $project: {
+              name: 1,
+              email: 1,
+              roleName: "$userRole.role",
+              pagePermissions: "$userRole.pagePermissions",
+            },
+          },
+        ]);
+      }
       // console.log(data,"data")
       return res.status(200).json({ message: "Users Fetched", data });
     } catch (error) {
@@ -63,15 +101,12 @@ export class UserController {
           $match: { email },
         },
       ]);
-
       if (isExistingUser.length === 0)
         return res.status(404).json({ message: "No user found on that email" });
-
       const isPasswordMatched = await Bcrypt.comparePassword(
         password,
         isExistingUser[0].password
       );
-
       if (!isPasswordMatched)
         return res.status(404).json({ message: "Password mismatched" });
 
@@ -79,7 +114,8 @@ export class UserController {
       await UserRepository.updateUser(isExistingUser[0]._id, { loginCount });
       const token = await Jwt.generateToken({
         email: isExistingUser[0].email,
-        loginCount,
+        role: isExistingUser[0].role,
+        uoid: isExistingUser[0]._id,
       });
       return res.status(200).json({ message: "Login Successful", token });
     } catch (error) {

@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import Config from "../config";
-// Extend the Request type to include the `user` property
 declare module "express-serve-static-core" {
   interface Request {
     user?: string | JwtPayload;
@@ -9,10 +8,8 @@ declare module "express-serve-static-core" {
 }
 
 export class Jwt {
-  // Use environment variable for secret key
   static secret: string = Config.JWT_SECRET || "defaultSecretKey";
 
-  // Verify token middleware
   static async verifyToken(req: Request, res: Response, next: NextFunction) {
     try {
       const token = req.headers.authorization?.split(" ")[1];
@@ -25,7 +22,6 @@ export class Jwt {
         if (err) {
           return res.status(400).json({ error: "Please login again" });
         }
-        // Attach the decoded token to the request object if needed
         req.user = decoded;
         next();
       });

@@ -1,0 +1,4 @@
+_id,role,pagePermissions[0],pagePermissions[1],pagePermissions[2],__v
+676ed0dbe43e442deef6f798,Admin,users,products,orders,0
+676ed2d6e43e442deef6f79b,Manager,teams,products,orders,0
+676ed2f2e43e442deef6f79d,Employee,orders,,,0
