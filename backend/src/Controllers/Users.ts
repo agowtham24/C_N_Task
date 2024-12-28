@@ -8,7 +8,6 @@ import { Jwt } from "../Utils/Jwt";
 export class UserController {
   static async createUser(req: Request, res: Response) {
     try {
-      const { uoid } = req.user as any;
       const isExistingRole = await RoleRepository.getRole([
         {
           $match: { _id: await MongoDB.convertToObjectId(req.body.role) },
@@ -22,7 +21,7 @@ export class UserController {
       if (isExistingRole.length === 0)
         return res.status(404).json({ message: "Role not found" });
       req.body.password = await Bcrypt.hashPassword(req.body.password);
-      await UserRepository.addUser({ ...req.body, ownerId: uoid });
+      await UserRepository.addUser(req.body);
       return res.status(200).json({ message: "User added successfully" });
     } catch (error) {
       return res.status(500).json(error);

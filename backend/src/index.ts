@@ -9,6 +9,8 @@ import { MongoDB } from "./mongoDB-setup";
 import { requestLogger } from "./Middlewares/logger";
 import userRouter from "./Routers/Users";
 import roleRouter from "./Routers/Roles";
+import productRouter from "./Routers/Products";
+import orderRouter from "./Routers/Orders";
 import fs from "fs";
 import path from "path";
 
@@ -72,3 +74,5 @@ app.get(`${Config.API_PREFIX}health`, async (req: Request, res: Response) => {
 });
 app.use(`${Config.API_PREFIX}roles`, roleRouter);
 app.use(`${Config.API_PREFIX}users`, userRouter);
+app.use(`${Config.API_PREFIX}products`, productRouter);
+app.use(`${Config.API_PREFIX}orders`, orderRouter);

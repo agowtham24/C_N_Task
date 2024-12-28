@@ -12,6 +12,10 @@ export class UserValidator {
           .regex(/^[0-9a-fA-F]{24}$/)
           .message("Role must be a valid MongoDB ObjectId")
           .required(),
+        ownerId: Joi.string()
+          .regex(/^[0-9a-fA-F]{24}$/)
+          .message("ownerId must be a valid MongoDB ObjectId")
+          .required(), // comment this while adding admin
       });
       const { error } = schema.validate(req.body, { abortEarly: false });
       if (error)
