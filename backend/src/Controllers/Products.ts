@@ -37,9 +37,10 @@ export class ProductController {
       let data = {
         ...req.body,
       };
-      if (req.files) {
+      if (req.file) {
         data.image = req.file?.filename;
       }
+      console.log(data,"data")
       await ProductRepository.updateProduct(req.params.id, data);
       return res.status(200).json({ message: "Product updated" });
     } catch (error) {

@@ -21,6 +21,10 @@ export class UserController {
       if (isExistingRole.length === 0)
         return res.status(404).json({ message: "Role not found" });
       req.body.password = await Bcrypt.hashPassword(req.body.password);
+      if (req.body.ownerId === "") {
+        delete req.body.ownerId;
+      }
+      console.log(req.body, "req.body");
       await UserRepository.addUser(req.body);
       return res.status(200).json({ message: "User added successfully" });
     } catch (error) {
@@ -99,6 +103,26 @@ export class UserController {
         {
           $match: { email },
         },
+        {
+          $lookup: {
+            from: "roles",
+            localField: "role",
+            foreignField: "_id",
+            as: "Role",
+          },
+        },
+        { $unwind: "$Role" },
+        {
+          $project: {
+            permissions: "$Role.pagePermissions",
+            password: 1,
+            loginCount: 1,
+            name: 1,
+            email: 1,
+            role: 1,
+            roleName: "$Role.role",
+          },
+        },
       ]);
       if (isExistingUser.length === 0)
         return res.status(404).json({ message: "No user found on that email" });
@@ -116,9 +140,22 @@ export class UserController {
         role: isExistingUser[0].role,
         uoid: isExistingUser[0]._id,
       });
-      return res.status(200).json({ message: "Login Successful", token });
+      return res.status(200).json({
+        message: "Login Successful",
+        token,
+        role: isExistingUser[0].roleName,
+        permissions: isExistingUser[0].permissions,
+      });
     } catch (error) {
-      return res.status(500).json(error);
+      return res.status(500).json({ error });
+    }
+  }
+  static async deleteUser(req: Request, res: Response) {
+    try {
+      await UserRepository.deleteUser(req.params.id);
+      return res.status(200).json({ message: "User deleted Success" });
+    } catch (error) {
+      return res.status(500).json({ error });
     }
   }
 }

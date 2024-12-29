@@ -11,4 +11,5 @@ userRouter.post(
 );
 userRouter.get("/", Jwt.verifyToken, UserController.getAllUsers);
 userRouter.post("/login", UserValidator.login, UserController.login);
+userRouter.delete("/:id", Jwt.verifyToken, UserController.deleteUser);
 export default userRouter;
